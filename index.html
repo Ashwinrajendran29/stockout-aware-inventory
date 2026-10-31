@@ -1,0 +1,394 @@
+<meta name="dash-one-writer">
+<style>
+  .sx { display: grid; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); color: var(--color-fg); }
+  .sx-head { display: grid; gap: var(--cds-gap-sm); max-width: 62rem; }
+  .sx-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.15; text-wrap: balance; }
+  .sx-lede { margin: 0; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); line-height: 1.5; max-width: 62ch; }
+  .sx-lede b, .sx-takeaway b { color: var(--color-fg); font-weight: 600; }
+  .sx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); }
+  .sx-bar label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .sx-bar select { font: inherit; font-size: var(--cds-font-size-body); padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-panel); color: var(--color-fg); }
+  .sx-takeaway { margin: 0; font-size: var(--cds-font-size-heading); line-height: 1.45; max-width: 60ch; }
+  .sx-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--cds-gap-md); }
+  .sx-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; }
+  .sx-tile-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .sx-tile-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1.1; min-height: 1.1em; }
+  .sx-tile-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.4; }
+  .sx-good { color: var(--color-ok); }
+  .sx-section { display: grid; gap: var(--cds-gap-md); }
+  .sx-h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  .sx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-md); }
+  .sx-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); align-content: start; min-width: 0; }
+  .sx-card h3 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  .sx-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; line-height: 1.45; }
+  .sx-chart { position: relative; min-height: 220px; }
+  .sx-chart.sx-tall { min-height: 300px; }
+  .sx-chart svg { display: block; overflow: visible; }
+  .sx-chart text { font-family: var(--font-anthropic-sans); font-size: 12px; fill: var(--color-fg-muted); }
+  .sx-chart .sx-strong { fill: var(--color-fg); font-weight: 600; }
+  .sx-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); line-height: 1.45; white-space: nowrap; z-index: 2; }
+  .sx-tip-head { color: var(--cds-text-secondary); }
+  .sx-table-wrap { overflow-x: auto; }
+  .sx-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+  .sx-table th { text-align: left; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-weight: 400; padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
+  .sx-table td { padding: var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
+  .sx-table .sx-num { text-align: right; }
+  .sx-swatch { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 2px; margin-right: 0.45rem; vertical-align: 0.05em; }
+  .sx-method { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.55; max-width: 75ch; margin: 0; padding-left: 1.1rem; display: grid; gap: var(--cds-gap-xs); }
+  [data-dash-source-state=empty] { color: transparent; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+</style>
+
+<div class="sx">
+  <header class="sx-head" id="top">
+    <h1 class="sx-title">Stockout-aware inventory</h1>
+    <p class="sx-lede">Walmart M5 data, 30,490 product-store series in 10 stores (2011 to 2016). An empty shelf records zero sales, so standard forecasts read stockouts as low demand and order less. This dashboard shows what that costs and what a stockout-aware reorder rule saves in a one-year simulation.</p>
+  </header>
+
+  <div class="sx-bar">
+    <label for="sx-store">Store</label>
+    <select id="sx-store" data-draw="store-select" data-source="stockout_losses" aria-label="Store"></select>
+  </div>
+
+  <p class="sx-takeaway" id="takeaway">At <b data-draw="store-name">—</b>, stockouts cost an estimated <b data-draw="t-lost">—</b> a year. Switching to stockout-aware ordering saves <b data-draw="t-saving">—</b> of annual inventory cost and serves <b data-draw="t-gain">—</b> more of demand.</p>
+
+  <div class="sx-tiles" id="tiles">
+    <div class="sx-tile">
+      <span class="sx-tile-label">Lost sales to stockouts</span>
+      <span class="sx-tile-value" data-draw="kpi-lost">—</span>
+      <span class="sx-tile-note">Per year, 2011 to 2016 average</span>
+    </div>
+    <div class="sx-tile">
+      <span class="sx-tile-label">Share of revenue lost</span>
+      <span class="sx-tile-value" data-draw="kpi-pct">—</span>
+      <span class="sx-tile-note">Lost sales divided by store revenue</span>
+    </div>
+    <div class="sx-tile">
+      <span class="sx-tile-label">Annual saving, stockout-aware ordering</span>
+      <span class="sx-tile-value sx-good" data-draw="kpi-saving">—</span>
+      <span class="sx-tile-note">Versus forecast-based ordering at the same 95% target</span>
+    </div>
+    <div class="sx-tile">
+      <span class="sx-tile-label">Extra demand served</span>
+      <span class="sx-tile-value sx-good" data-draw="kpi-gain">—</span>
+      <span class="sx-tile-note">Fill rate gain, percentage points</span>
+    </div>
+  </div>
+
+  <section class="sx-section" id="store-detail">
+    <h2 class="sx-h2">Your store</h2>
+    <div class="sx-grid">
+      <div class="sx-card" id="policy-card">
+        <h3>Annual inventory cost by reorder policy</h3>
+        <p class="sx-note">Holding cost plus lost gross margin over one simulated year (May 2015 to May 2016). Shorter is better.</p>
+        <div class="sx-chart" data-draw="policy-bars" data-source="store_policy"></div>
+      </div>
+      <div class="sx-card" id="policy-table-card">
+        <h3>Policy details</h3>
+        <p class="sx-note">Fill rate is the share of demand that found the item on the shelf.</p>
+        <div class="sx-table-wrap">
+          <table class="sx-table" data-source="store_policy" data-row-key="store,policy">
+            <thead><tr><th data-field="policy">Policy</th><th class="sx-num" data-field="fill_rate">Fill rate</th><th class="sx-num" data-field="total_cost">Annual cost</th><th class="sx-num" data-field="avg_inventory_value">Avg inventory</th></tr></thead>
+            <tbody data-draw="policy-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="sx-card" id="stores-card">
+      <h3>Lost sales by store</h3>
+      <p class="sx-note">Estimated share of revenue lost to stockouts each year. Click a bar to select that store.</p>
+      <div class="sx-chart sx-tall" data-draw="store-bars" data-source="stockout_losses"></div>
+    </div>
+  </section>
+
+  <section class="sx-section" id="policies">
+    <h2 class="sx-h2">How the three policies compare</h2>
+    <div class="sx-card" id="frontier-card">
+      <h3>Cost against service, all 10 stores</h3>
+      <p class="sx-note">Each point is one safety-stock setting. Lower and further right is better. At each safety setting, the stockout-aware rule serves more demand for less money than the forecast-based rule.</p>
+      <div class="sx-chart sx-tall" data-draw="frontier" data-source="policy_frontier"></div>
+    </div>
+  </section>
+
+  <section class="sx-section" id="why">
+    <h2 class="sx-h2">Why it works</h2>
+    <div class="sx-grid">
+      <div class="sx-card" id="bias-card">
+        <h3>Weeks forecast too low after a stockout</h3>
+        <p class="sx-note">307 items at store CA_1 with a stockout in the four weeks before the forecast. 50% would be unbiased.</p>
+        <div class="sx-chart" data-draw="bias" data-source="forecast_bias"></div>
+      </div>
+      <div class="sx-card" id="snap-card">
+        <h3>SNAP days lift food sales only</h3>
+        <p class="sx-note">Change in daily sales on SNAP benefit days, with 95% intervals. SNAP buys food only, so non-food categories are a built-in check.</p>
+        <div class="sx-chart" data-draw="snap" data-source="snap_effect"></div>
+      </div>
+    </div>
+    <div class="sx-card" id="elasticity-card">
+      <h3>Price sensitivity by category</h3>
+      <p class="sx-note">Percent change in weekly unit sales for a 1% price increase, from item-level price changes with item and store-week fixed effects. Associations, not clean causal effects.</p>
+      <div class="sx-table-wrap">
+        <table class="sx-table" data-source="price_elasticity" data-row-key="category">
+          <thead><tr><th data-field="category">Category</th><th class="sx-num" data-field="elasticity">Elasticity</th><th class="sx-num" data-field="std_error">Std. error</th><th class="sx-num" data-field="items">Items</th></tr></thead>
+          <tbody data-draw="elasticity-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="sx-section" id="method">
+    <h2 class="sx-h2">How the numbers were made</h2>
+    <ul class="sx-method">
+      <li>Stockouts: a run of L zero-sale days is flagged when its probability under the item's normal 56-day sales rate λ, e^(−λL), is below 0.0001. A simulated store with no stockouts was used to estimate that about two-thirds of flags are real, and lost sales were scaled down to match.</li>
+      <li>Simulation: weekly order-up-to replenishment with a 2-day lead time for 29,906 items. Each item's real detected stockout periods were replayed as supply outages that hit every policy equally. Holding cost 25% of price per year; a lost sale costs 30% of price.</li>
+      <li>Policies: fixed safety stock (3 days of demand), forecast-based (95% target from the last 28 days of sales) and stockout-aware (the same, but leaving out days the shelf was empty).</li>
+      <li>All results come from the project's R scripts and are reproducible from the Kaggle M5 Forecasting – Accuracy data.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+  window.sx = window.sx || {};
+  const sx = window.sx;
+  sx.num = (v) => (v === null || v === undefined || v === '' ? NaN : Number(v));
+  sx.money = (v) => (Math.abs(v) >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M' : '$' + d3.format(',')(Math.round(v / 1e3)) + 'K');
+  sx.pct1 = d3.format('.1%');
+  sx.store = () => dash.params().store || 'ALL';
+  sx.storeLabel = (s) => (s === 'ALL' ? 'all 10 stores' : 'store ' + s);
+  sx.policies = ['Fixed safety stock', 'Forecast-based', 'Stockout-aware'];
+  sx.color = (p) => (p === 'Stockout-aware' ? dash.colors[0] : p === 'Forecast-based' ? dash.colors[1] : 'var(--cds-chart-muted)');
+  sx.ok = (id) => { const d = dash.data(id); return d.status === 'ok' ? d.data : null; };
+  sx.mark = (source, field, where, text) => {
+    const s = document.createElement('span');
+    s.dataset.source = source; s.dataset.field = field;
+    if (where) s.dataset.where = where;
+    s.textContent = text; return s;
+  };
+  sx.where = (obj) => Object.entries(obj).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+  sx.textWidth = (svg, strings) => {
+    const t = svg.append('text').attr('visibility', 'hidden');
+    let w = 0; strings.forEach((s) => { t.text(s); w = Math.max(w, t.node().getComputedTextLength()); });
+    t.remove(); return w;
+  };
+  sx.failed = (el) => {
+    el.replaceChildren();
+    const box = document.createElement('div');
+    box.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:.5rem;min-height:inherit;height:100%;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)';
+    const dot = document.createElement('span'); dot.style.cssText = 'width:.375rem;height:.375rem;border-radius:50%;background:var(--color-bad)';
+    const msg = document.createElement('span'); msg.textContent = 'Failed to load';
+    box.append(dot, msg); el.append(box);
+  };
+
+  // ---- calculations (readers can inspect these in Sources) ----
+  dash.calc('store_policy', {
+    title: 'Policy results by store',
+    description: 'Sums the simulation results over categories for each store and policy, plus an all-stores total; fill rate = sales / demand.',
+    inputs: ['policy_results'],
+    fn: (policy_results) => {
+      const n = (v) => Number(v);
+      const out = [];
+      const add = (store, rows) => {
+        ['Fixed safety stock', 'Forecast-based', 'Stockout-aware'].forEach((p) => {
+          const r = rows.filter((x) => x.policy === p);
+          const demand = r.reduce((a, x) => a + n(x.demand_units), 0);
+          const sales = r.reduce((a, x) => a + n(x.sales_units), 0);
+          out.push({ store, policy: p, fill_rate: sales / demand, total_cost: r.reduce((a, x) => a + n(x.total_cost), 0),
+            holding_cost: r.reduce((a, x) => a + n(x.holding_cost), 0), lost_margin: r.reduce((a, x) => a + n(x.lost_margin), 0),
+            avg_inventory_value: r.reduce((a, x) => a + n(x.avg_inventory_value), 0) });
+        });
+      };
+      add('ALL', policy_results);
+      [...new Set(policy_results.map((x) => x.store))].sort().forEach((s) => add(s, policy_results.filter((x) => x.store === s)));
+      return out;
+    },
+  });
+  dash.calc('store_savings', {
+    title: 'Saving from stockout-aware ordering',
+    description: 'For each store: forecast-based minus stockout-aware annual cost, the saving as a share of forecast-based cost, and the fill-rate gain.',
+    inputs: ['store_policy'],
+    fn: (store_policy) => {
+      const stores = [...new Set(store_policy.map((x) => x.store))];
+      return stores.map((s) => {
+        const fb = store_policy.find((x) => x.store === s && x.policy === 'Forecast-based');
+        const sa = store_policy.find((x) => x.store === s && x.policy === 'Stockout-aware');
+        return { store: s, saving: fb.total_cost - sa.total_cost, saving_pct: 1 - sa.total_cost / fb.total_cost, fill_gain: sa.fill_rate - fb.fill_rate };
+      });
+    },
+  });
+  dash.calc('loss_totals', {
+    title: 'Lost sales with all-stores total',
+    description: 'Each store’s estimated lost sales and revenue per year, plus the 10-store total and its share of revenue.',
+    inputs: ['stockout_losses'],
+    fn: (stockout_losses) => {
+      const rows = stockout_losses.map((x) => ({ store: x.store, lost_per_year: Number(x.lost_per_year), revenue_per_year: Number(x.revenue_per_year), lost_pct: Number(x.lost_pct) }));
+      const lost = rows.reduce((a, x) => a + x.lost_per_year, 0), rev = rows.reduce((a, x) => a + x.revenue_per_year, 0);
+      return [{ store: 'ALL', lost_per_year: lost, revenue_per_year: rev, lost_pct: lost / rev }, ...rows];
+    },
+  });
+
+  // ---- store picker ----
+  dash.draw('store-select', (sel) => {
+    const rows = sx.ok('stockout_losses') || [];
+    sel.replaceChildren(new Option('All 10 stores', 'ALL'), ...rows.map((r) => r.store).sort().map((s) => new Option(s, s)));
+    sel.value = sx.store();
+    sel.onchange = () => dash.setParams({ store: sel.value });
+  });
+  dash.draw('store-name', (el) => { el.textContent = sx.storeLabel(sx.store()); });
+
+  // ---- headline figures ----
+  const fig = (name, source, field, fmt) => dash.draw(name, (el) => {
+    const rows = sx.ok(source); const st = sx.store();
+    const r = rows && rows.find((x) => x.store === st);
+    if (!r) { el.textContent = '—'; return; }
+    el.replaceChildren(sx.mark(source, field, sx.where({ store: st }), fmt(r[field])));
+  });
+  fig('kpi-lost', 'loss_totals', 'lost_per_year', sx.money);
+  fig('t-lost', 'loss_totals', 'lost_per_year', sx.money);
+  fig('kpi-pct', 'loss_totals', 'lost_pct', sx.pct1);
+  fig('kpi-saving', 'store_savings', 'saving', sx.money);
+  fig('t-saving', 'store_savings', 'saving', (v) => sx.money(v));
+  fig('kpi-gain', 'store_savings', 'fill_gain', (v) => '+' + (v * 100).toFixed(1) + ' pts');
+  fig('t-gain', 'store_savings', 'fill_gain', (v) => (v * 100).toFixed(1) + ' points');
+
+  // ---- policy bars for the selected store ----
+  dash.draw('policy-bars', (el) => {
+    const rows = sx.ok('store_policy');
+    if (dash.data('store_policy').status === 'error') return sx.failed(el);
+    el.replaceChildren(); if (!rows) return;
+    const st = sx.store(); const data = sx.policies.map((p) => rows.find((x) => x.store === st && x.policy === p));
+    const W = Math.max(280, el.clientWidth), rowH = 54, H = data.length * rowH + 10;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const left = 0, right = sx.textWidth(svg, data.map((d) => sx.money(d.total_cost) + '  ·  ' + sx.pct1(d.fill_rate) + ' fill')) + 12;
+    const x = d3.scaleLinear([0, d3.max(data, (d) => d.total_cost)], [left, W - right]);
+    const g = svg.selectAll('g').data(data).join('g').attr('transform', (d, i) => `translate(0,${i * rowH})`);
+    g.append('text').attr('x', 0).attr('y', 14).attr('class', (d) => (d.policy === 'Stockout-aware' ? 'sx-strong' : null)).text((d) => d.policy);
+    g.append('rect').attr('x', left).attr('y', 22).attr('height', 20).attr('rx', 3).attr('width', (d) => Math.max(2, x(d.total_cost) - left)).style('fill', (d) => sx.color(d.policy));
+    g.append('text').attr('x', (d) => x(d.total_cost) + 8).attr('y', 37).text((d) => sx.money(d.total_cost) + '  ·  ' + sx.pct1(d.fill_rate) + ' fill');
+  });
+
+  dash.draw('policy-rows', (tb) => {
+    const rows = sx.ok('store_policy'); tb.replaceChildren(); if (!rows) return;
+    const st = sx.store();
+    sx.policies.map((p) => rows.find((x) => x.store === st && x.policy === p)).forEach((r) => {
+      const tr = document.createElement('tr'); tr.dataset.key = encodeURIComponent(r.store) + ',' + encodeURIComponent(r.policy);
+      const name = document.createElement('td'); const sw = document.createElement('span'); sw.className = 'sx-swatch'; sw.style.background = sx.color(r.policy);
+      name.append(sw, document.createTextNode(r.policy));
+      const cells = [sx.pct1(r.fill_rate), sx.money(r.total_cost), sx.money(r.avg_inventory_value)].map((t) => { const td = document.createElement('td'); td.className = 'sx-num'; td.textContent = t; return td; });
+      tr.append(name, ...cells); tb.append(tr);
+    });
+  });
+
+  // ---- lost sales by store ----
+  dash.draw('store-bars', (el) => {
+    if (dash.data('stockout_losses').status === 'error') return sx.failed(el);
+    const raw = sx.ok('stockout_losses'); el.replaceChildren(); if (!raw) return;
+    const data = raw.map((r) => ({ store: r.store, pct: Number(r.lost_pct), lost: Number(r.lost_per_year) })).sort((a, b) => b.pct - a.pct);
+    const st = sx.store();
+    const W = Math.max(280, el.clientWidth), rowH = 27, H = data.length * rowH + 6;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const left = sx.textWidth(svg, data.map((d) => d.store)) + 12;
+    const right = sx.textWidth(svg, data.map((d) => sx.pct1(d.pct) + '  (' + sx.money(d.lost) + '/yr)')) + 12;
+    const x = d3.scaleLinear([0, d3.max(data, (d) => d.pct)], [left, W - right]);
+    const g = svg.selectAll('g').data(data).join('g').attr('transform', (d, i) => `translate(0,${i * rowH})`).style('cursor', 'pointer')
+      .on('click', (e, d) => dash.setParams({ store: d.store === st ? 'ALL' : d.store }));
+    g.append('rect').attr('x', 0).attr('y', 0).attr('width', W).attr('height', rowH).style('fill', 'transparent');
+    g.append('text').attr('x', left - 10).attr('y', 17).attr('text-anchor', 'end').attr('class', (d) => (d.store === st ? 'sx-strong' : null)).text((d) => d.store);
+    g.append('rect').attr('x', left).attr('y', 5).attr('height', 16).attr('rx', 3).attr('width', (d) => Math.max(2, x(d.pct) - left))
+      .style('fill', (d) => (st === 'ALL' || d.store === st ? dash.colors[0] : 'var(--cds-chart-muted)'));
+    g.append('text').attr('x', (d) => x(d.pct) + 8).attr('y', 17).attr('class', (d) => (d.store === st ? 'sx-strong' : null)).text((d) => sx.pct1(d.pct) + '  (' + sx.money(d.lost) + '/yr)');
+  });
+
+  // ---- frontier ----
+  dash.draw('frontier', (el) => {
+    if (dash.data('policy_frontier').status === 'error') return sx.failed(el);
+    const raw = sx.ok('policy_frontier'); el.replaceChildren(); if (!raw) return;
+    const data = raw.map((r) => ({ policy: r.policy, setting: r.setting, fill: Number(r.fill_rate), cost: Number(r.total_cost), inv: Number(r.avg_inventory_value) }));
+    const W = Math.max(300, el.clientWidth), H = 300;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const yTicks = d3.scaleLinear(d3.extent(data, (d) => d.cost), [0, 1]).nice().ticks(5);
+    const m = { top: 12, bottom: 34, left: sx.textWidth(svg, yTicks.map(sx.money)) + 10, right: sx.textWidth(svg, sx.policies) + 14 };
+    const x = d3.scaleLinear(d3.extent(data, (d) => d.fill), [m.left, W - m.right]).nice();
+    const y = d3.scaleLinear(d3.extent(data, (d) => d.cost), [H - m.bottom, m.top]).nice();
+    svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', m.left).attr('x2', W - m.right).attr('y1', y).attr('y2', y).style('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(y.ticks(5)).join('text').attr('x', m.left - 8).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text(sx.money);
+    const xt = x.ticks(Math.max(3, Math.floor((W - m.left - m.right) / 90)));
+    svg.append('g').selectAll('text').data(xt).join('text').attr('x', x).attr('y', H - m.bottom + 18).attr('text-anchor', 'middle').text(d3.format('.0%'));
+    svg.append('text').attr('x', (m.left + W - m.right) / 2).attr('y', H - 4).attr('text-anchor', 'middle').text('Fill rate (share of demand served)');
+    const line = d3.line().x((d) => x(d.fill)).y((d) => y(d.cost));
+    const ends = [];
+    sx.policies.forEach((p) => {
+      const pts = data.filter((d) => d.policy === p).sort((a, b) => a.fill - b.fill);
+      svg.append('path').attr('d', line(pts)).style('fill', 'none').style('stroke', sx.color(p)).style('stroke-width', 2).style('stroke-linecap', 'round').style('stroke-linejoin', 'round');
+      svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (d) => x(d.fill)).attr('cy', (d) => y(d.cost)).attr('r', 4)
+        .style('fill', 'var(--color-panel)').style('stroke', sx.color(p)).style('stroke-width', 2);
+      const last = pts[pts.length - 1]; ends.push({ p, y: y(last.cost), x: x(last.fill) });
+    });
+    ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
+    svg.append('g').selectAll('text').data(ends).join('text').attr('x', (d) => d.x + 8).attr('y', (d) => d.y + 4).style('fill', (d) => sx.color(d.p)).style('font-weight', 600).text((d) => d.p);
+    const tip = document.createElement('div'); tip.className = 'sx-tip'; tip.hidden = true; el.append(tip);
+    const hl = svg.append('circle').attr('r', 7).style('fill', 'none').style('stroke-width', 2).attr('visibility', 'hidden');
+    const del = d3.Delaunay.from(data, (d) => x(d.fill), (d) => y(d.cost));
+    svg.append('rect').attr('x', m.left).attr('y', m.top).attr('width', W - m.left - m.right).attr('height', H - m.top - m.bottom).style('fill', 'transparent')
+      .on('pointermove', (e) => {
+        const [px, py] = d3.pointer(e); const d = data[del.find(px, py)];
+        hl.attr('cx', x(d.fill)).attr('cy', y(d.cost)).style('stroke', sx.color(d.policy)).attr('visibility', 'visible');
+        tip.replaceChildren();
+        const h = document.createElement('div'); h.className = 'sx-tip-head'; h.textContent = d.policy + ', ' + d.setting;
+        const a = document.createElement('div'); a.textContent = 'Fill rate ' + sx.pct1(d.fill);
+        const b = document.createElement('div'); b.textContent = 'Annual cost ' + sx.money(d.cost);
+        const c = document.createElement('div'); c.textContent = 'Avg inventory ' + sx.money(d.inv);
+        tip.append(h, a, b, c); tip.hidden = false;
+        const sc = el.clientWidth / W; const tx = x(d.fill) * sc, ty = y(d.cost) * sc;
+        tip.style.left = Math.min(Math.max(0, tx + 12), el.clientWidth - tip.offsetWidth) + 'px';
+        tip.style.top = Math.max(0, ty - tip.offsetHeight - 10) + 'px';
+      })
+      .on('pointerleave', () => { tip.hidden = true; hl.attr('visibility', 'hidden'); });
+  });
+
+  // ---- forecast bias ----
+  dash.draw('bias', (el) => {
+    if (dash.data('forecast_bias').status === 'error') return sx.failed(el);
+    const raw = sx.ok('forecast_bias'); el.replaceChildren(); if (!raw) return;
+    const data = raw.map((r) => ({ model: r.model, share: Number(r.weeks_under_forecast), bias: Number(r.bias_units_per_week) }));
+    const W = Math.max(280, el.clientWidth), rowH = 44, H = data.length * rowH + 22;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const right = sx.textWidth(svg, data.map((d) => d3.format('.0%')(d.share) + '  (bias ' + d3.format('+.1f')(d.bias) + '/wk)')) + 10;
+    const x = d3.scaleLinear([0, 1], [0, W - right]);
+    svg.append('line').attr('x1', x(0.5)).attr('x2', x(0.5)).attr('y1', 0).attr('y2', H - 18).style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '3 3');
+    svg.append('text').attr('x', x(0.5)).attr('y', H - 4).attr('text-anchor', 'middle').text('50% = unbiased');
+    const g = svg.selectAll('g.r').data(data).join('g').attr('class', 'r').attr('transform', (d, i) => `translate(0,${i * rowH})`);
+    const corr = (d) => /corrected/.test(d.model);
+    g.append('text').attr('x', 0).attr('y', 12).attr('class', (d) => (corr(d) ? 'sx-strong' : null)).text((d) => d.model);
+    g.append('rect').attr('x', 0).attr('y', 18).attr('height', 16).attr('rx', 3).attr('width', (d) => x(d.share)).style('fill', (d) => (corr(d) ? dash.colors[0] : 'var(--cds-chart-muted)'));
+    g.append('text').attr('x', (d) => x(d.share) + 8).attr('y', 31).text((d) => d3.format('.0%')(d.share) + '  (bias ' + d3.format('+.1f')(d.bias) + '/wk)');
+  });
+
+  // ---- SNAP ----
+  dash.draw('snap', (el) => {
+    if (dash.data('snap_effect').status === 'error') return sx.failed(el);
+    const raw = sx.ok('snap_effect'); el.replaceChildren(); if (!raw) return;
+    const data = raw.map((r) => ({ cat: r.category, e: Number(r.effect), lo: Number(r.low), hi: Number(r.high) }));
+    const W = Math.max(280, el.clientWidth), rowH = 54, H = data.length * rowH + 30;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const left = sx.textWidth(svg, data.map((d) => d.cat)) + 14;
+    const x = d3.scaleLinear([-0.03, 0.14], [left, W - 16]);
+    x.ticks(4).forEach((t) => { svg.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', 0).attr('y2', H - 26).style('stroke', t === 0 ? 'var(--cds-chart-axis)' : 'var(--cds-chart-grid)');
+      svg.append('text').attr('x', x(t)).attr('y', H - 8).attr('text-anchor', 'middle').text(d3.format('+.0%')(t)); });
+    const g = svg.selectAll('g.r').data(data).join('g').attr('class', 'r').attr('transform', (d, i) => `translate(0,${i * rowH + 26})`);
+    const food = (d) => d.cat === 'FOODS';
+    g.append('text').attr('x', left - 12).attr('y', 4).attr('text-anchor', 'end').attr('class', (d) => (food(d) ? 'sx-strong' : null)).text((d) => d.cat);
+    g.append('line').attr('x1', (d) => x(d.lo)).attr('x2', (d) => x(d.hi)).attr('y1', 0).attr('y2', 0).style('stroke', 'var(--color-fg-muted)').style('stroke-width', 1.5);
+    g.append('circle').attr('cx', (d) => x(d.e)).attr('cy', 0).attr('r', 6).style('fill', (d) => (food(d) ? dash.colors[0] : 'var(--cds-chart-muted)')).style('stroke', 'var(--color-panel)').style('stroke-width', 2);
+    g.append('text').attr('x', (d) => x(d.e)).attr('y', -12).attr('text-anchor', 'middle').attr('class', (d) => (food(d) ? 'sx-strong' : null)).text((d) => d3.format('+.1%')(d.e));
+  });
+
+  // ---- elasticity table ----
+  dash.draw('elasticity-rows', (tb) => {
+    const rows = sx.ok('price_elasticity'); tb.replaceChildren(); if (!rows) return;
+    rows.forEach((r) => {
+      const tr = document.createElement('tr');
+      const cells = [r.category, Number(r.elasticity).toFixed(2), Number(r.std_error).toFixed(2), d3.format(',')(Number(r.items))].map((t, i) => { const td = document.createElement('td'); if (i) td.className = 'sx-num'; td.textContent = t; return td; });
+      tr.append(...cells); tb.append(tr);
+    });
+  });
+</script>

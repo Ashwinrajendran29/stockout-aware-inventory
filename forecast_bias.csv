@@ -1,0 +1,5 @@
+model,weeks_under_forecast,bias_units_per_week,weekly_mae
+28-day average,0.652,-4.26,7.14
+CART,0.581,-3.11,7.34
+Random forest,0.578,-2.75,7.06
+"Random forest, stockout-corrected",0.395,1.13,7.53

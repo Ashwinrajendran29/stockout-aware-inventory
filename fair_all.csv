@@ -1,0 +1,4 @@
+method,MAE,RMSE,bias,days_scored
+Seasonal naive,1.36,2.716,-0.136,82735
+28-day average,1.155,2.327,-0.129,82735
+"28-day average, stockout days removed",1.168,2.325,-0.064,82735

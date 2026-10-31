@@ -1,0 +1,16 @@
+policy,setting,fill_rate,total_cost,avg_inventory_value
+Fixed safety stock,1 days,0.7425,3491557,600044
+Fixed safety stock,2 days,0.7764,3078057,722880
+Fixed safety stock,3 days,0.7985,2812646,842914
+Fixed safety stock,5 days,0.8227,2558110,1063506
+Fixed safety stock,7 days,0.8405,2368088,1336070
+Forecast-based,z=0.84,0.8064,2673197,819088
+Forecast-based,z=1.28,0.83,2402743,990360
+Forecast-based,z=1.65,0.8417,2286975,1124954
+Forecast-based,z=2.05,0.8502,2215273,1277548
+Forecast-based,z=2.33,0.8543,2189762,1378859
+Stockout-aware,z=0.84,0.8243,2510226,859354
+Stockout-aware,z=1.28,0.8428,2276763,1026797
+Stockout-aware,z=1.65,0.8516,2185092,1159819
+Stockout-aware,z=2.05,0.8584,2130522,1310636
+Stockout-aware,z=2.33,0.8615,2114188,1411873

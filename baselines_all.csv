@@ -1,0 +1,4 @@
+method,MAE,RMSE,bias,total_fcst,total_actual
+Seasonal naive (same weekday last week),1.363,2.737,-0.087,126584,134032
+28-day average,1.174,2.347,-0.071,127955,134032
+"28-day average, stockout days removed",1.208,2.378,0.013,135156,134032

@@ -1,0 +1,9 @@
+metric,value
+On-sale item-days,4768932
+Zero-sale item-days (after launch),2544603
+Flagged stockout runs,68159
+Flagged stockout item-days,1007249
+Share of on-sale days flagged,0.2112
+Share of zero days that look like stockouts,0.3958
+"Placebo A, Poisson no-stockout world: share of on-sale days flagged",0.0336
+"Placebo B, lumpy (neg. binomial) no-stockout world: share flagged",0.096

@@ -1,0 +1,79 @@
+event,type,cat,uplift,n
+SuperBowl,Sporting,FOODS,0.015,50
+SuperBowl,Sporting,HOBBIES,-0.117,50
+SuperBowl,Sporting,HOUSEHOLD,-0.112,50
+StPatricksDay,Cultural,FOODS,0.023,50
+StPatricksDay,Cultural,HOBBIES,-0.019,50
+StPatricksDay,Cultural,HOUSEHOLD,0.003,50
+Purim End,Religious,FOODS,-0.02,50
+Purim End,Religious,HOBBIES,-0.026,50
+Purim End,Religious,HOUSEHOLD,-0.022,50
+OrthodoxEaster,Religious,FOODS,-0.173,10
+OrthodoxEaster,Religious,HOBBIES,-0.245,10
+OrthodoxEaster,Religious,HOUSEHOLD,-0.251,10
+Pesach End,Religious,FOODS,-0.065,60
+Pesach End,Religious,HOBBIES,0.071,60
+Pesach End,Religious,HOUSEHOLD,0.028,60
+Cinco De Mayo,Cultural,FOODS,0.073,50
+Cinco De Mayo,Cultural,HOBBIES,0.012,50
+Cinco De Mayo,Cultural,HOUSEHOLD,0.024,50
+Mother's day,Cultural,FOODS,-0.148,40
+Mother's day,Cultural,HOBBIES,-0.135,40
+Mother's day,Cultural,HOUSEHOLD,-0.24,40
+MemorialDay,National,FOODS,0.005,50
+MemorialDay,National,HOBBIES,-0.047,50
+MemorialDay,National,HOUSEHOLD,0.034,50
+NBAFinalsStart,Sporting,FOODS,0.04,50
+NBAFinalsStart,Sporting,HOBBIES,0.048,50
+NBAFinalsStart,Sporting,HOUSEHOLD,0.082,50
+IndependenceDay,National,FOODS,0.035,50
+IndependenceDay,National,HOBBIES,-0.122,50
+IndependenceDay,National,HOUSEHOLD,-0.096,50
+Ramadan starts,Religious,FOODS,0.018,50
+Ramadan starts,Religious,HOBBIES,0.059,50
+Ramadan starts,Religious,HOUSEHOLD,0.035,50
+Eid al-Fitr,Religious,FOODS,-0.041,50
+Eid al-Fitr,Religious,HOBBIES,-0.001,50
+Eid al-Fitr,Religious,HOUSEHOLD,-0.01,50
+LaborDay,National,FOODS,0.289,50
+LaborDay,National,HOBBIES,0.168,50
+LaborDay,National,HOUSEHOLD,0.269,50
+ColumbusDay,National,FOODS,0.041,50
+ColumbusDay,National,HOBBIES,0.001,50
+ColumbusDay,National,HOUSEHOLD,-0.024,50
+VeteransDay,National,FOODS,0.107,50
+VeteransDay,National,HOBBIES,0.017,50
+VeteransDay,National,HOUSEHOLD,-0.022,50
+Thanksgiving,National,FOODS,-0.152,40
+Thanksgiving,National,HOBBIES,-0.44,40
+Thanksgiving,National,HOUSEHOLD,-0.355,40
+Chanukah End,Religious,FOODS,-0.018,40
+Chanukah End,Religious,HOBBIES,-0.033,40
+Chanukah End,Religious,HOUSEHOLD,-0.003,40
+OrthodoxChristmas,Religious,FOODS,-0.027,50
+OrthodoxChristmas,Religious,HOBBIES,-0.022,50
+OrthodoxChristmas,Religious,HOUSEHOLD,-0.026,50
+MartinLutherKingDay,National,FOODS,0.055,50
+MartinLutherKingDay,National,HOBBIES,0.063,50
+MartinLutherKingDay,National,HOUSEHOLD,0.138,50
+ValentinesDay,Cultural,FOODS,0.001,40
+ValentinesDay,Cultural,HOBBIES,-0.036,40
+ValentinesDay,Cultural,HOUSEHOLD,-0.134,40
+PresidentsDay,National,FOODS,0.056,50
+PresidentsDay,National,HOBBIES,0.029,50
+PresidentsDay,National,HOUSEHOLD,0.156,50
+Father's day,Cultural,FOODS,-0.088,30
+Father's day,Cultural,HOBBIES,-0.037,30
+Father's day,Cultural,HOUSEHOLD,-0.128,30
+NBAFinalsEnd,Sporting,FOODS,-0.04,40
+NBAFinalsEnd,Sporting,HOBBIES,0.014,40
+NBAFinalsEnd,Sporting,HOUSEHOLD,-0.051,40
+EidAlAdha,Religious,FOODS,0.045,40
+EidAlAdha,Religious,HOBBIES,-0.005,40
+EidAlAdha,Religious,HOUSEHOLD,-0.016,40
+Halloween,Cultural,FOODS,-0.055,40
+Halloween,Cultural,HOBBIES,-0.042,40
+Halloween,Cultural,HOUSEHOLD,-0.08,40
+Easter,Cultural,FOODS,-0.088,30
+Easter,Cultural,HOBBIES,-0.18,30
+Easter,Cultural,HOUSEHOLD,-0.233,30

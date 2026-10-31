@@ -1,0 +1,3 @@
+policy,setting,fill_rate,lost_units,hold_cost,lost_cost,total_cost,avg_inventory_value,stockout_itemdays,lost_outside_outages
+Forecast-based,"z=1.65, no outages",0.912507314610128,1328010,301823.893767123,1258283.049,1560106.94276712,1210612.32115385,389558,1328010
+Stockout-aware,"z=1.65, no outages",0.911765015917883,1339277,302316.334917808,1265857.947,1568174.28191781,1212587.4971978,394983,1339277

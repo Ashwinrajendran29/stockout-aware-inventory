@@ -1,0 +1,13 @@
+type,cat,uplift
+Cultural,FOODS,-0.03
+Cultural,HOBBIES,-0.055
+Cultural,HOUSEHOLD,-0.099
+National,FOODS,0.06
+National,HOBBIES,-0.031
+National,HOUSEHOLD,0.022
+Religious,FOODS,-0.023
+Religious,HOBBIES,0.002
+Religious,HOUSEHOLD,-0.008
+Sporting,FOODS,0.008
+Sporting,HOBBIES,-0.021
+Sporting,HOUSEHOLD,-0.025

@@ -1,0 +1,4 @@
+alpha,real_share,placebo_lumpy_share,excess_share,precision_est
+0.01,0.1019,0.0941,0.0077,0.08
+0.001,0.0621,0.036,0.0262,0.42
+1e-04,0.0452,0.0152,0.03,0.66

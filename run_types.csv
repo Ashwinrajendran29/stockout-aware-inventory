@@ -1,0 +1,4 @@
+type,runs,days,share_of_onsale_days,lost_rev
+stockout-length gap (<=60 days),64143,485794,0.1019,2137459
+very long gap (>60 days),3864,516172,0.1082,2557832
+ongoing at data end (possible delisting),152,5283,0.0011,74030

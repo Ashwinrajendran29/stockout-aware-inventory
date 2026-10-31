@@ -1,0 +1,4 @@
+data/*.csv
+out/*.rds
+.Rhistory
+.RData

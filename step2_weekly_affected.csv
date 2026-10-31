@@ -1,0 +1,5 @@
+model,MAE,RMSE,bias,under_share
+28-day average,7.14,14.02,-4.26,0.652
+CART,7.34,13.96,-3.11,0.581
+Random forest,7.06,13.63,-2.75,0.578
+"Random forest, stockout-corrected",7.53,14.64,1.13,0.395

@@ -1,0 +1,5 @@
+model,MAE,RMSE,bias,days
+CART,1.935,3.77,-0.471,7585
+"CART, stockout-corrected",2.088,3.85,0.072,7585
+Random forest,1.914,3.744,-0.412,7585
+"Random forest, stockout-corrected",2.063,3.79,0.154,7585
