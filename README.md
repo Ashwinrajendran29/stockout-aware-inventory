@@ -4,6 +4,8 @@ An end-to-end AI decision system for retail replenishment, built on Walmart's M5
 
 **Live dashboard:** https://ashwinrajendran29.github.io/stockout-aware-inventory/
 
+[![Interactive dashboard: pick a store to see its stockout losses and the savings from stockout-aware ordering](dashboard_preview.png)](https://ashwinrajendran29.github.io/stockout-aware-inventory/)
+
 **The problem:** an empty shelf records zero sales, so forecasts read stockouts as zero demand, order less, and cause the next stockout.
 
 ## Results
