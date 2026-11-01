@@ -1,87 +1,132 @@
-<meta name="dash-one-writer">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stockout-Aware Inventory Dashboard</title>
+<meta name="description" content="What stockouts cost 10 Walmart stores and how much a stockout-aware reorder rule saves, from the M5 data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
-  .sx { display: grid; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); color: var(--color-fg); }
-  .sx-head { display: grid; gap: var(--cds-gap-sm); max-width: 62rem; }
-  .sx-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.15; text-wrap: balance; }
-  .sx-lede { margin: 0; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); line-height: 1.5; max-width: 62ch; }
-  .sx-lede b, .sx-takeaway b { color: var(--color-fg); font-weight: 600; }
-  .sx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); }
-  .sx-bar label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-  .sx-bar select { font: inherit; font-size: var(--cds-font-size-body); padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-panel); color: var(--color-fg); }
-  .sx-takeaway { margin: 0; font-size: var(--cds-font-size-heading); line-height: 1.45; max-width: 60ch; }
-  .sx-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--cds-gap-md); }
-  .sx-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; }
+  :root {
+    --font-anthropic-sans: "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+    --font-anthropic-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 16px; --cds-gap-lg: 20px; --cds-gap-xl: 32px;
+    --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 20px; --cds-pad-xl: 28px;
+    --cds-radius: 8px; --cds-font-size-caption: 12.5px; --cds-font-size-body: 15px; --cds-font-size-heading: 17px; --cds-font-size-title: 28px;
+    --cds-font-weight-medium: 600; --cds-dur-slow: 400ms; --cds-ease-out: cubic-bezier(.2,.8,.2,1);
+    --color-bg: #fbfbfa; --color-panel: #ffffff; --color-fg: #1a1a19; --color-fg-muted: #5e5d59; --color-border-line: #e4e3df;
+    --color-ok: #1f7a4d; --color-warn: #a86a00; --color-bad: #c43c3c;
+    --cds-chart-muted: #c9c8c2; --cds-chart-grid: #ecebe7; --cds-chart-axis: #8a8984; --cds-chart-reference: #8a8984;
+    --cds-surface-popover: #ffffff; --cds-border: #dcdbd6; --cds-shadow-popover: 0 6px 20px rgba(0,0,0,.10); --cds-text-secondary: #5e5d59;
+  }
+  @media (prefers-color-scheme: dark) { :root {
+    --color-bg: #191918; --color-panel: #222220; --color-fg: #f0efec; --color-fg-muted: #b5b3ab; --color-border-line: #3a3936;
+    --color-ok: #6cc493; --color-bad: #e07c7c; --cds-chart-muted: #55544f; --cds-chart-grid: #2f2e2b; --cds-chart-axis: #8a8984; --cds-chart-reference: #8a8984;
+    --cds-surface-popover: #2a2a27; --cds-border: #45443f; --cds-shadow-popover: 0 6px 20px rgba(0,0,0,.45); --cds-text-secondary: #b5b3ab; color-scheme: dark; } }
+  html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
+  #dash-root { --dash-gutter: 24px; padding-block: 28px 56px; padding-left: max(var(--dash-gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--dash-gutter), env(safe-area-inset-right, 0px)); }
+  .sx-foot { max-width: 76rem; margin: 40px auto 0; font-family: var(--font-anthropic-sans); font-size: 12.5px; color: var(--color-fg-muted); }
+  .sx-foot a { color: inherit; }
+</style>
+<style>
+  /* Layout: a hero band (eyebrow, serif headline, store chips, four figures) over cards grouped in labelled sections. */
+  #dash-root { --dash-gutter: clamp(16px, 4vw, 40px); }
+  .sx { --sx-accent: #2a78d6; display: grid; gap: clamp(28px, 4vw, 44px); font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 76rem; margin-inline: auto; }
+  .sx-hero { display: grid; gap: var(--cds-gap-lg); padding: clamp(20px, 3.5vw, 36px); border-radius: calc(var(--cds-radius) * 2); border: 1px solid var(--color-border-line);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--sx-accent) 9%, var(--color-panel)) 0%, var(--color-panel) 55%); }
+  .sx-eyebrow { font-size: var(--cds-font-size-caption); letter-spacing: .08em; text-transform: uppercase; color: var(--color-fg-muted); margin: 0; }
+  .sx-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: clamp(1.9rem, 4.2vw, 3.1rem); margin: 0; line-height: 1.08; letter-spacing: -.01em; text-wrap: balance; max-width: 22ch; }
+  .sx-title b { font-weight: 400; color: var(--sx-accent); font-variant-numeric: tabular-nums; }
+  .sx-lede { margin: 0; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); line-height: 1.6; max-width: 64ch; }
+  .sx-lede b { color: var(--color-fg); font-weight: 600; }
+  .sx-chips { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); align-items: center; }
+  .sx-chip-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .sx-chip-state { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); letter-spacing: .06em; margin-right: 2px; }
+  .sx-chip { font: inherit; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--color-border-line);
+    background: var(--color-bg); color: var(--color-fg); cursor: pointer; transition: background var(--cds-dur-slow), border-color var(--cds-dur-slow); }
+  .sx-chip:hover { border-color: var(--sx-accent); }
+  .sx-chip:focus-visible { outline: 2px solid var(--sx-accent); outline-offset: 2px; }
+  .sx-chip[aria-pressed="true"] { background: var(--sx-accent); border-color: var(--sx-accent); color: #fff; }
+  .sx-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--cds-gap-md); }
+  .sx-tile { background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: 6px; align-content: start; }
+  .sx-tile.sx-hi { background: color-mix(in srgb, var(--sx-accent) 12%, var(--color-bg)); border-color: color-mix(in srgb, var(--sx-accent) 45%, var(--color-border-line)); }
   .sx-tile-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-  .sx-tile-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1.1; min-height: 1.1em; }
+  .sx-tile-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: clamp(1.8rem, 3vw, 2.4rem); font-variant-numeric: tabular-nums; line-height: 1.05; min-height: 1.05em; }
+  .sx-tile.sx-hi .sx-tile-value { color: var(--sx-accent); }
   .sx-tile-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.4; }
-  .sx-good { color: var(--color-ok); }
   .sx-section { display: grid; gap: var(--cds-gap-md); }
-  .sx-h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  .sx-section-head { display: grid; gap: 4px; }
+  .sx-kicker { font-size: var(--cds-font-size-caption); letter-spacing: .08em; text-transform: uppercase; color: var(--sx-accent); margin: 0; }
+  .sx-h2 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: clamp(1.35rem, 2.2vw, 1.7rem); margin: 0; text-wrap: balance; }
   .sx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-md); }
   .sx-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); align-content: start; min-width: 0; }
   .sx-card h3 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
-  .sx-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; line-height: 1.45; }
+  .sx-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; line-height: 1.5; }
   .sx-chart { position: relative; min-height: 220px; }
   .sx-chart.sx-tall { min-height: 300px; }
   .sx-chart svg { display: block; overflow: visible; }
   .sx-chart text { font-family: var(--font-anthropic-sans); font-size: 12px; fill: var(--color-fg-muted); }
   .sx-chart .sx-strong { fill: var(--color-fg); font-weight: 600; }
+  .sx-chart .sx-accent-text { fill: var(--sx-accent); font-weight: 600; }
   .sx-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); line-height: 1.45; white-space: nowrap; z-index: 2; }
   .sx-tip-head { color: var(--cds-text-secondary); }
   .sx-table-wrap { overflow-x: auto; }
   .sx-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
   .sx-table th { text-align: left; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-weight: 400; padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
-  .sx-table td { padding: var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
+  .sx-table td { padding: 10px var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
+  .sx-table tbody tr:last-child td { border-bottom: 0; }
   .sx-table .sx-num { text-align: right; }
-  .sx-swatch { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 2px; margin-right: 0.45rem; vertical-align: 0.05em; }
-  .sx-method { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.55; max-width: 75ch; margin: 0; padding-left: 1.1rem; display: grid; gap: var(--cds-gap-xs); }
+  .sx-swatch { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 3px; margin-right: 0.5rem; vertical-align: 0.02em; }
+  .sx-method { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.6; max-width: 78ch; margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; }
   [data-dash-source-state=empty] { color: transparent; }
   [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes sx-rise { from { opacity: .001; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .sx-chart svg { animation: sx-rise var(--cds-dur-slow) var(--cds-ease-out) both; }
+  }
 </style>
-
+</head>
+<body>
+<div id="dash-root">
 <div class="sx">
-  <header class="sx-head" id="top">
-    <h1 class="sx-title">Stockout-aware inventory</h1>
-    <p class="sx-lede">Walmart M5 data, 30,490 product-store series in 10 stores (2011 to 2016). An empty shelf records zero sales, so standard forecasts read stockouts as low demand and order less. This dashboard shows what that costs and what a stockout-aware reorder rule saves in a one-year simulation.</p>
+  <header class="sx-hero" id="top">
+    <p class="sx-eyebrow">Walmart M5 · 30,490 product-store series · 10 stores · 2011–2016</p>
+    <h1 class="sx-title">Empty shelves cost <span data-draw="store-name-title">—</span> <b data-draw="t-lost">—</b> a year</h1>
+    <p class="sx-lede">An empty shelf records zero sales, so standard forecasts read stockouts as low demand and order even less. A stockout-aware reorder rule ignores those days. In a one-year simulation it saves <b data-draw="t-saving">—</b> of inventory cost and serves <b data-draw="t-gain">—</b> more of demand.</p>
+    <div class="sx-chips" data-draw="store-chips" data-source="stockout_losses" role="group" aria-label="Store"></div>
+    <div class="sx-tiles" id="tiles">
+      <div class="sx-tile">
+        <span class="sx-tile-label">Lost sales to stockouts</span>
+        <span class="sx-tile-value" data-draw="kpi-lost">—</span>
+        <span class="sx-tile-note">Per year, 2011 to 2016 average</span>
+      </div>
+      <div class="sx-tile">
+        <span class="sx-tile-label">Share of revenue lost</span>
+        <span class="sx-tile-value" data-draw="kpi-pct">—</span>
+        <span class="sx-tile-note">Lost sales divided by revenue</span>
+      </div>
+      <div class="sx-tile sx-hi">
+        <span class="sx-tile-label">Annual saving, stockout-aware ordering</span>
+        <span class="sx-tile-value" data-draw="kpi-saving">—</span>
+        <span class="sx-tile-note">Versus forecast-based ordering, same 95% target</span>
+      </div>
+      <div class="sx-tile sx-hi">
+        <span class="sx-tile-label">Extra demand served</span>
+        <span class="sx-tile-value" data-draw="kpi-gain">—</span>
+        <span class="sx-tile-note">Fill rate gain, percentage points</span>
+      </div>
+    </div>
   </header>
 
-  <div class="sx-bar">
-    <label for="sx-store">Store</label>
-    <select id="sx-store" data-draw="store-select" data-source="stockout_losses" aria-label="Store"></select>
-  </div>
-
-  <p class="sx-takeaway" id="takeaway">At <b data-draw="store-name">—</b>, stockouts cost an estimated <b data-draw="t-lost">—</b> a year. Switching to stockout-aware ordering saves <b data-draw="t-saving">—</b> of annual inventory cost and serves <b data-draw="t-gain">—</b> more of demand.</p>
-
-  <div class="sx-tiles" id="tiles">
-    <div class="sx-tile">
-      <span class="sx-tile-label">Lost sales to stockouts</span>
-      <span class="sx-tile-value" data-draw="kpi-lost">—</span>
-      <span class="sx-tile-note">Per year, 2011 to 2016 average</span>
-    </div>
-    <div class="sx-tile">
-      <span class="sx-tile-label">Share of revenue lost</span>
-      <span class="sx-tile-value" data-draw="kpi-pct">—</span>
-      <span class="sx-tile-note">Lost sales divided by store revenue</span>
-    </div>
-    <div class="sx-tile">
-      <span class="sx-tile-label">Annual saving, stockout-aware ordering</span>
-      <span class="sx-tile-value sx-good" data-draw="kpi-saving">—</span>
-      <span class="sx-tile-note">Versus forecast-based ordering at the same 95% target</span>
-    </div>
-    <div class="sx-tile">
-      <span class="sx-tile-label">Extra demand served</span>
-      <span class="sx-tile-value sx-good" data-draw="kpi-gain">—</span>
-      <span class="sx-tile-note">Fill rate gain, percentage points</span>
-    </div>
-  </div>
-
   <section class="sx-section" id="store-detail">
-    <h2 class="sx-h2">Your store</h2>
+    <div class="sx-section-head"><p class="sx-kicker">The decision</p><h2 class="sx-h2">Which reorder rule should this store use?</h2></div>
     <div class="sx-grid">
       <div class="sx-card" id="policy-card">
         <h3>Annual inventory cost by reorder policy</h3>
         <p class="sx-note">Holding cost plus lost gross margin over one simulated year (May 2015 to May 2016). Shorter is better.</p>
-        <div class="sx-chart" data-draw="policy-bars" data-source="store_policy"></div>
+        <div class="sx-chart" data-draw="policy-bars" data-source="store_policy store_savings"></div>
       </div>
       <div class="sx-card" id="policy-table-card">
         <h3>Policy details</h3>
@@ -102,7 +147,7 @@
   </section>
 
   <section class="sx-section" id="policies">
-    <h2 class="sx-h2">How the three policies compare</h2>
+    <div class="sx-section-head"><p class="sx-kicker">The trade-off</p><h2 class="sx-h2">More service for less money, at every safety setting</h2></div>
     <div class="sx-card" id="frontier-card">
       <h3>Cost against service, all 10 stores</h3>
       <p class="sx-note">Each point is one safety-stock setting. Lower and further right is better. At each safety setting, the stockout-aware rule serves more demand for less money than the forecast-based rule.</p>
@@ -111,7 +156,7 @@
   </section>
 
   <section class="sx-section" id="why">
-    <h2 class="sx-h2">Why it works</h2>
+    <div class="sx-section-head"><p class="sx-kicker">The evidence</p><h2 class="sx-h2">Why fixing the data beats a fancier model</h2></div>
     <div class="sx-grid">
       <div class="sx-card" id="bias-card">
         <h3>Weeks forecast too low after a stockout</h3>
@@ -137,7 +182,7 @@
   </section>
 
   <section class="sx-section" id="method">
-    <h2 class="sx-h2">How the numbers were made</h2>
+    <div class="sx-section-head"><p class="sx-kicker">Method</p><h2 class="sx-h2">How the numbers were made</h2></div>
     <ul class="sx-method">
       <li>Stockouts: a run of L zero-sale days is flagged when its probability under the item's normal 56-day sales rate λ, e^(−λL), is below 0.0001. A simulated store with no stockouts was used to estimate that about two-thirds of flags are real, and lost sales were scaled down to match.</li>
       <li>Simulation: weekly order-up-to replenishment with a 2-day lead time for 29,906 items. Each item's real detected stockout periods were replayed as supply outages that hit every policy equally. Holding cost 25% of price per year; a lost sale costs 30% of price.</li>
@@ -146,7 +191,31 @@
     </ul>
   </section>
 </div>
-
+<p class="sx-foot">Built in R from the Walmart M5 Forecasting data (Kaggle). Code and full write-up: <a href="https://github.com/Ashwinrajendran29/stockout-aware-inventory">github.com/Ashwinrajendran29/stockout-aware-inventory</a></p>
+</div>
+<script>
+window.DASH_DATA = {"stockout_losses":[{"store":"CA_1","state":"CA","revenue_per_year":"4319450","lost_per_year":"152314","lost_pct":"0.0353","flagged_day_share":"0.0451"},{"store":"CA_2","state":"CA","revenue_per_year":"3358608","lost_per_year":"114671","lost_pct":"0.0341","flagged_day_share":"0.0404"},{"store":"CA_3","state":"CA","revenue_per_year":"6153199","lost_per_year":"247737","lost_pct":"0.0403","flagged_day_share":"0.0585"},{"store":"CA_4","state":"CA","revenue_per_year":"2345753","lost_per_year":"62314","lost_pct":"0.0266","flagged_day_share":"0.0283"},{"store":"TX_1","state":"TX","revenue_per_year":"3017846","lost_per_year":"98680","lost_pct":"0.0327","flagged_day_share":"0.039"},{"store":"TX_2","state":"TX","revenue_per_year":"3931566","lost_per_year":"132228","lost_pct":"0.0336","flagged_day_share":"0.0444"},{"store":"TX_3","state":"TX","revenue_per_year":"3422981","lost_per_year":"113016","lost_pct":"0.033","flagged_day_share":"0.0395"},{"store":"WI_1","state":"WI","revenue_per_year":"2842859","lost_per_year":"82542","lost_pct":"0.029","flagged_day_share":"0.0324"},{"store":"WI_2","state":"WI","revenue_per_year":"3412008","lost_per_year":"140908","lost_pct":"0.0413","flagged_day_share":"0.0434"},{"store":"WI_3","state":"WI","revenue_per_year":"3246063","lost_per_year":"123453","lost_pct":"0.038","flagged_day_share":"0.0406"}],"policy_results":[{"store":"CA_1","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"212978","sales_units":"169082","holding_cost":"4276","lost_margin":"35169","total_cost":"39445","avg_inventory_value":"17150"},{"store":"CA_1","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"372895","sales_units":"325426","holding_cost":"7551","lost_margin":"66757","total_cost":"74309","avg_inventory_value":"30288"},{"store":"CA_1","category":"FOODS","policy":"Fixed safety stock","demand_units":"1118110","sales_units":"895288","holding_cost":"13416","lost_margin":"183022","total_cost":"196437","avg_inventory_value":"53810"},{"store":"CA_2","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"160028","sales_units":"124991","holding_cost":"2911","lost_margin":"24179","total_cost":"27090","avg_inventory_value":"11675"},{"store":"CA_2","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"392004","sales_units":"333881","holding_cost":"8224","lost_margin":"78521","total_cost":"86745","avg_inventory_value":"32987"},{"store":"CA_2","category":"FOODS","policy":"Fixed safety stock","demand_units":"892521","sales_units":"684459","holding_cost":"9164","lost_margin":"165330","total_cost":"174493","avg_inventory_value":"36756"},{"store":"CA_3","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"235028","sales_units":"193202","holding_cost":"4384","lost_margin":"27499","total_cost":"31883","avg_inventory_value":"17582"},{"store":"CA_3","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"653976","sales_units":"568048","holding_cost":"11518","lost_margin":"118107","total_cost":"129625","avg_inventory_value":"46199"},{"store":"CA_3","category":"FOODS","policy":"Fixed safety stock","demand_units":"1533493","sales_units":"1176269","holding_cost":"15257","lost_margin":"253648","total_cost":"268905","avg_inventory_value":"61194"},{"store":"CA_4","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"144917","sales_units":"124098","holding_cost":"2704","lost_margin":"16041","total_cost":"18745","avg_inventory_value":"10844"},{"store":"CA_4","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"184175","sales_units":"158713","holding_cost":"4270","lost_margin":"37407","total_cost":"41677","avg_inventory_value":"17125"},{"store":"CA_4","category":"FOODS","policy":"Fixed safety stock","demand_units":"613943","sales_units":"491910","holding_cost":"7571","lost_margin":"96772","total_cost":"104343","avg_inventory_value":"30368"},{"store":"TX_1","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"111826","sales_units":"87013","holding_cost":"2542","lost_margin":"17676","total_cost":"20218","avg_inventory_value":"10196"},{"store":"TX_1","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"345422","sales_units":"294692","holding_cost":"6423","lost_margin":"63732","total_cost":"70155","avg_inventory_value":"25763"},{"store":"TX_1","category":"FOODS","policy":"Fixed safety stock","demand_units":"765648","sales_units":"605738","holding_cost":"8804","lost_margin":"124678","total_cost":"133482","avg_inventory_value":"35313"},{"store":"TX_2","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"145364","sales_units":"118717","holding_cost":"3722","lost_margin":"21917","total_cost":"25639","avg_inventory_value":"14931"},{"store":"TX_2","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"365791","sales_units":"308468","holding_cost":"6966","lost_margin":"72172","total_cost":"79138","avg_inventory_value":"27940"},{"store":"TX_2","category":"FOODS","policy":"Fixed safety stock","demand_units":"970553","sales_units":"767960","holding_cost":"11092","lost_margin":"156235","total_cost":"167327","avg_inventory_value":"44492"},{"store":"TX_3","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"145295","sales_units":"114928","holding_cost":"4324","lost_margin":"27877","total_cost":"32201","avg_inventory_value":"17342"},{"store":"TX_3","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"361826","sales_units":"298677","holding_cost":"6459","lost_margin":"79272","total_cost":"85731","avg_inventory_value":"25908"},{"store":"TX_3","category":"FOODS","policy":"Fixed safety stock","demand_units":"925885","sales_units":"733172","holding_cost":"10796","lost_margin":"153770","total_cost":"164566","avg_inventory_value":"43304"},{"store":"WI_1","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"154834","sales_units":"135673","holding_cost":"3084","lost_margin":"15631","total_cost":"18715","avg_inventory_value":"12369"},{"store":"WI_1","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"272004","sales_units":"237743","holding_cost":"5417","lost_margin":"43444","total_cost":"48861","avg_inventory_value":"21728"},{"store":"WI_1","category":"FOODS","policy":"Fixed safety stock","demand_units":"948023","sales_units":"771333","holding_cost":"11240","lost_margin":"131650","total_cost":"142890","avg_inventory_value":"45084"},{"store":"WI_2","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"99771","sales_units":"77307","holding_cost":"2001","lost_margin":"23034","total_cost":"25036","avg_inventory_value":"8028"},{"store":"WI_2","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"398239","sales_units":"338591","holding_cost":"6245","lost_margin":"72367","total_cost":"78612","avg_inventory_value":"25051"},{"store":"WI_2","category":"FOODS","policy":"Fixed safety stock","demand_units":"1277096","sales_units":"909014","holding_cost":"12867","lost_margin":"254075","total_cost":"266942","avg_inventory_value":"51609"},{"store":"WI_3","category":"HOBBIES","policy":"Fixed safety stock","demand_units":"102612","sales_units":"81106","holding_cost":"1989","lost_margin":"15824","total_cost":"17812","avg_inventory_value":"7976"},{"store":"WI_3","category":"HOUSEHOLD","policy":"Fixed safety stock","demand_units":"290004","sales_units":"241022","holding_cost":"5045","lost_margin":"58936","total_cost":"63981","avg_inventory_value":"20234"},{"store":"WI_3","category":"FOODS","policy":"Fixed safety stock","demand_units":"984265","sales_units":"753139","holding_cost":"9890","lost_margin":"167754","total_cost":"177643","avg_inventory_value":"39667"},{"store":"CA_1","category":"HOBBIES","policy":"Forecast-based","demand_units":"212978","sales_units":"180329","holding_cost":"5960","lost_margin":"25664","total_cost":"31624","avg_inventory_value":"23907"},{"store":"CA_1","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"372895","sales_units":"337697","holding_cost":"10504","lost_margin":"48709","total_cost":"59212","avg_inventory_value":"42131"},{"store":"CA_1","category":"FOODS","policy":"Forecast-based","demand_units":"1118110","sales_units":"935615","holding_cost":"16250","lost_margin":"150448","total_cost":"166699","avg_inventory_value":"65180"},{"store":"CA_2","category":"HOBBIES","policy":"Forecast-based","demand_units":"160028","sales_units":"135567","holding_cost":"4632","lost_margin":"14603","total_cost":"19234","avg_inventory_value":"18577"},{"store":"CA_2","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"392004","sales_units":"348463","holding_cost":"11427","lost_margin":"57238","total_cost":"68664","avg_inventory_value":"45832"},{"store":"CA_2","category":"FOODS","policy":"Forecast-based","demand_units":"892521","sales_units":"718248","holding_cost":"11549","lost_margin":"138982","total_cost":"150531","avg_inventory_value":"46324"},{"store":"CA_3","category":"HOBBIES","policy":"Forecast-based","demand_units":"235028","sales_units":"204192","holding_cost":"6082","lost_margin":"16659","total_cost":"22741","avg_inventory_value":"24395"},{"store":"CA_3","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"653976","sales_units":"587865","holding_cost":"14404","lost_margin":"86783","total_cost":"101186","avg_inventory_value":"57774"},{"store":"CA_3","category":"FOODS","policy":"Forecast-based","demand_units":"1533493","sales_units":"1269224","holding_cost":"18453","lost_margin":"188699","total_cost":"207152","avg_inventory_value":"74015"},{"store":"CA_4","category":"HOBBIES","policy":"Forecast-based","demand_units":"144917","sales_units":"130586","holding_cost":"4204","lost_margin":"8994","total_cost":"13198","avg_inventory_value":"16863"},{"store":"CA_4","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"184175","sales_units":"168340","holding_cost":"6876","lost_margin":"23268","total_cost":"30144","avg_inventory_value":"27579"},{"store":"CA_4","category":"FOODS","policy":"Forecast-based","demand_units":"613943","sales_units":"520125","holding_cost":"10323","lost_margin":"73881","total_cost":"84204","avg_inventory_value":"41407"},{"store":"TX_1","category":"HOBBIES","policy":"Forecast-based","demand_units":"111826","sales_units":"95277","holding_cost":"4031","lost_margin":"9765","total_cost":"13796","avg_inventory_value":"16170"},{"store":"TX_1","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"345422","sales_units":"308310","holding_cost":"9195","lost_margin":"45906","total_cost":"55100","avg_inventory_value":"36880"},{"store":"TX_1","category":"FOODS","policy":"Forecast-based","demand_units":"765648","sales_units":"637428","holding_cost":"11412","lost_margin":"99633","total_cost":"111045","avg_inventory_value":"45773"},{"store":"TX_2","category":"HOBBIES","policy":"Forecast-based","demand_units":"145364","sales_units":"128042","holding_cost":"5226","lost_margin":"13194","total_cost":"18420","avg_inventory_value":"20961"},{"store":"TX_2","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"365791","sales_units":"322764","holding_cost":"9800","lost_margin":"53780","total_cost":"63580","avg_inventory_value":"39309"},{"store":"TX_2","category":"FOODS","policy":"Forecast-based","demand_units":"970553","sales_units":"806420","holding_cost":"13664","lost_margin":"126685","total_cost":"140349","avg_inventory_value":"54805"},{"store":"TX_3","category":"HOBBIES","policy":"Forecast-based","demand_units":"145295","sales_units":"124239","holding_cost":"5551","lost_margin":"19067","total_cost":"24617","avg_inventory_value":"22263"},{"store":"TX_3","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"361826","sales_units":"312554","holding_cost":"9059","lost_margin":"60604","total_cost":"69663","avg_inventory_value":"36337"},{"store":"TX_3","category":"FOODS","policy":"Forecast-based","demand_units":"925885","sales_units":"767088","holding_cost":"13208","lost_margin":"126838","total_cost":"140045","avg_inventory_value":"52976"},{"store":"WI_1","category":"HOBBIES","policy":"Forecast-based","demand_units":"154834","sales_units":"141890","holding_cost":"4685","lost_margin":"8442","total_cost":"13127","avg_inventory_value":"18791"},{"store":"WI_1","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"272004","sales_units":"248594","holding_cost":"8202","lost_margin":"28021","total_cost":"36223","avg_inventory_value":"32899"},{"store":"WI_1","category":"FOODS","policy":"Forecast-based","demand_units":"948023","sales_units":"801752","holding_cost":"14080","lost_margin":"107260","total_cost":"121340","avg_inventory_value":"56476"},{"store":"WI_2","category":"HOBBIES","policy":"Forecast-based","demand_units":"99771","sales_units":"84335","holding_cost":"3406","lost_margin":"15943","total_cost":"19349","avg_inventory_value":"13660"},{"store":"WI_2","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"398239","sales_units":"351054","holding_cost":"8786","lost_margin":"55106","total_cost":"63892","avg_inventory_value":"35241"},{"store":"WI_2","category":"FOODS","policy":"Forecast-based","demand_units":"1277096","sales_units":"975152","holding_cost":"16007","lost_margin":"211951","total_cost":"227958","avg_inventory_value":"64206"},{"store":"WI_3","category":"HOBBIES","policy":"Forecast-based","demand_units":"102612","sales_units":"89323","holding_cost":"3399","lost_margin":"8699","total_cost":"12098","avg_inventory_value":"13632"},{"store":"WI_3","category":"HOUSEHOLD","policy":"Forecast-based","demand_units":"290004","sales_units":"253696","holding_cost":"7563","lost_margin":"42900","total_cost":"50464","avg_inventory_value":"30337"},{"store":"WI_3","category":"FOODS","policy":"Forecast-based","demand_units":"984265","sales_units":"791231","holding_cost":"12530","lost_margin":"138785","total_cost":"151315","avg_inventory_value":"50257"},{"store":"CA_1","category":"HOBBIES","policy":"Stockout-aware","demand_units":"212978","sales_units":"182248","holding_cost":"6049","lost_margin":"24510","total_cost":"30559","avg_inventory_value":"24262"},{"store":"CA_1","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"372895","sales_units":"339001","holding_cost":"10636","lost_margin":"47696","total_cost":"58332","avg_inventory_value":"42661"},{"store":"CA_1","category":"FOODS","policy":"Stockout-aware","demand_units":"1118110","sales_units":"951407","holding_cost":"16987","lost_margin":"139165","total_cost":"156152","avg_inventory_value":"68135"},{"store":"CA_2","category":"HOBBIES","policy":"Stockout-aware","demand_units":"160028","sales_units":"136339","holding_cost":"4694","lost_margin":"13245","total_cost":"17939","avg_inventory_value":"18826"},{"store":"CA_2","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"392004","sales_units":"349708","holding_cost":"11593","lost_margin":"56230","total_cost":"67824","avg_inventory_value":"46500"},{"store":"CA_2","category":"FOODS","policy":"Stockout-aware","demand_units":"892521","sales_units":"726751","holding_cost":"12075","lost_margin":"131194","total_cost":"143269","avg_inventory_value":"48433"},{"store":"CA_3","category":"HOBBIES","policy":"Stockout-aware","demand_units":"235028","sales_units":"204880","holding_cost":"6191","lost_margin":"15806","total_cost":"21997","avg_inventory_value":"24833"},{"store":"CA_3","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"653976","sales_units":"590339","holding_cost":"14933","lost_margin":"83546","total_cost":"98479","avg_inventory_value":"59896"},{"store":"CA_3","category":"FOODS","policy":"Stockout-aware","demand_units":"1533493","sales_units":"1293053","holding_cost":"19643","lost_margin":"170116","total_cost":"189760","avg_inventory_value":"78788"},{"store":"CA_4","category":"HOBBIES","policy":"Stockout-aware","demand_units":"144917","sales_units":"130590","holding_cost":"4226","lost_margin":"8947","total_cost":"13173","avg_inventory_value":"16952"},{"store":"CA_4","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"184175","sales_units":"168459","holding_cost":"6888","lost_margin":"23192","total_cost":"30079","avg_inventory_value":"27626"},{"store":"CA_4","category":"FOODS","policy":"Stockout-aware","demand_units":"613943","sales_units":"525554","holding_cost":"10631","lost_margin":"70058","total_cost":"80689","avg_inventory_value":"42639"},{"store":"TX_1","category":"HOBBIES","policy":"Stockout-aware","demand_units":"111826","sales_units":"95925","holding_cost":"4054","lost_margin":"9570","total_cost":"13625","avg_inventory_value":"16261"},{"store":"TX_1","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"345422","sales_units":"309030","holding_cost":"9299","lost_margin":"45284","total_cost":"54583","avg_inventory_value":"37298"},{"store":"TX_1","category":"FOODS","policy":"Stockout-aware","demand_units":"765648","sales_units":"643835","holding_cost":"11836","lost_margin":"95138","total_cost":"106975","avg_inventory_value":"47475"},{"store":"TX_2","category":"HOBBIES","policy":"Stockout-aware","demand_units":"145364","sales_units":"127854","holding_cost":"5266","lost_margin":"13502","total_cost":"18768","avg_inventory_value":"21123"},{"store":"TX_2","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"365791","sales_units":"324677","holding_cost":"9938","lost_margin":"52745","total_cost":"62683","avg_inventory_value":"39862"},{"store":"TX_2","category":"FOODS","policy":"Stockout-aware","demand_units":"970553","sales_units":"821681","holding_cost":"14230","lost_margin":"116591","total_cost":"130820","avg_inventory_value":"57076"},{"store":"TX_3","category":"HOBBIES","policy":"Stockout-aware","demand_units":"145295","sales_units":"124358","holding_cost":"5656","lost_margin":"18246","total_cost":"23902","avg_inventory_value":"22685"},{"store":"TX_3","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"361826","sales_units":"314781","holding_cost":"9275","lost_margin":"58190","total_cost":"67464","avg_inventory_value":"37201"},{"store":"TX_3","category":"FOODS","policy":"Stockout-aware","demand_units":"925885","sales_units":"778626","holding_cost":"13738","lost_margin":"119226","total_cost":"132964","avg_inventory_value":"55103"},{"store":"WI_1","category":"HOBBIES","policy":"Stockout-aware","demand_units":"154834","sales_units":"141791","holding_cost":"4695","lost_margin":"8441","total_cost":"13137","avg_inventory_value":"18833"},{"store":"WI_1","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"272004","sales_units":"249197","holding_cost":"8272","lost_margin":"27625","total_cost":"35898","avg_inventory_value":"33180"},{"store":"WI_1","category":"FOODS","policy":"Stockout-aware","demand_units":"948023","sales_units":"810103","holding_cost":"14567","lost_margin":"102041","total_cost":"116609","avg_inventory_value":"58430"},{"store":"WI_2","category":"HOBBIES","policy":"Stockout-aware","demand_units":"99771","sales_units":"84596","holding_cost":"3492","lost_margin":"11684","total_cost":"15176","avg_inventory_value":"14007"},{"store":"WI_2","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"398239","sales_units":"353033","holding_cost":"9036","lost_margin":"52810","total_cost":"61846","avg_inventory_value":"36244"},{"store":"WI_2","category":"FOODS","policy":"Stockout-aware","demand_units":"1277096","sales_units":"998128","holding_cost":"16989","lost_margin":"201683","total_cost":"218672","avg_inventory_value":"68145"},{"store":"WI_3","category":"HOBBIES","policy":"Stockout-aware","demand_units":"102612","sales_units":"89466","holding_cost":"3417","lost_margin":"8692","total_cost":"12109","avg_inventory_value":"13704"},{"store":"WI_3","category":"HOUSEHOLD","policy":"Stockout-aware","demand_units":"290004","sales_units":"254919","holding_cost":"7685","lost_margin":"42618","total_cost":"50302","avg_inventory_value":"30824"},{"store":"WI_3","category":"FOODS","policy":"Stockout-aware","demand_units":"984265","sales_units":"806076","holding_cost":"13168","lost_margin":"128139","total_cost":"141307","avg_inventory_value":"52818"}],"policy_frontier":[{"policy":"Fixed safety stock","setting":"1 days","fill_rate":"0.7425","total_cost":"3491557","avg_inventory_value":"600044"},{"policy":"Fixed safety stock","setting":"2 days","fill_rate":"0.7764","total_cost":"3078057","avg_inventory_value":"722880"},{"policy":"Fixed safety stock","setting":"3 days","fill_rate":"0.7985","total_cost":"2812646","avg_inventory_value":"842914"},{"policy":"Fixed safety stock","setting":"5 days","fill_rate":"0.8227","total_cost":"2558110","avg_inventory_value":"1063506"},{"policy":"Fixed safety stock","setting":"7 days","fill_rate":"0.8405","total_cost":"2368088","avg_inventory_value":"1336070"},{"policy":"Forecast-based","setting":"z=0.84","fill_rate":"0.8064","total_cost":"2673197","avg_inventory_value":"819088"},{"policy":"Forecast-based","setting":"z=1.28","fill_rate":"0.83","total_cost":"2402743","avg_inventory_value":"990360"},{"policy":"Forecast-based","setting":"z=1.65","fill_rate":"0.8417","total_cost":"2286975","avg_inventory_value":"1124954"},{"policy":"Forecast-based","setting":"z=2.05","fill_rate":"0.8502","total_cost":"2215273","avg_inventory_value":"1277548"},{"policy":"Forecast-based","setting":"z=2.33","fill_rate":"0.8543","total_cost":"2189762","avg_inventory_value":"1378859"},{"policy":"Stockout-aware","setting":"z=0.84","fill_rate":"0.8243","total_cost":"2510226","avg_inventory_value":"859354"},{"policy":"Stockout-aware","setting":"z=1.28","fill_rate":"0.8428","total_cost":"2276763","avg_inventory_value":"1026797"},{"policy":"Stockout-aware","setting":"z=1.65","fill_rate":"0.8516","total_cost":"2185092","avg_inventory_value":"1159819"},{"policy":"Stockout-aware","setting":"z=2.05","fill_rate":"0.8584","total_cost":"2130522","avg_inventory_value":"1310636"},{"policy":"Stockout-aware","setting":"z=2.33","fill_rate":"0.8615","total_cost":"2114188","avg_inventory_value":"1411873"}],"forecast_bias":[{"model":"28-day average","weeks_under_forecast":"0.652","bias_units_per_week":"-4.26","weekly_mae":"7.14"},{"model":"CART","weeks_under_forecast":"0.581","bias_units_per_week":"-3.11","weekly_mae":"7.34"},{"model":"Random forest","weeks_under_forecast":"0.578","bias_units_per_week":"-2.75","weekly_mae":"7.06"},{"model":"Random forest, stockout-corrected","weeks_under_forecast":"0.395","bias_units_per_week":"1.13","weekly_mae":"7.53"}],"snap_effect":[{"category":"FOODS","effect":"0.1073","low":"0.0956","high":"0.1191"},{"category":"HOUSEHOLD","effect":"1e-04","low":"-0.0086","high":"0.0089"},{"category":"HOBBIES","effect":"0.0055","low":"-0.0047","high":"0.0158"}],"price_elasticity":[{"category":"FOODS","elasticity":"-0.91","std_error":"0.06","items":"11390"},{"category":"HOUSEHOLD","elasticity":"-0.4","std_error":"0.05","items":"6908"},{"category":"HOBBIES","elasticity":"-0.42","std_error":"0.1","items":"3764"}]};
+(function () {
+  const params = { store: 'ALL' };
+  const calcs = {}, draws = {}, onDatas = [];
+  const dark = matchMedia('(prefers-color-scheme: dark)');
+  const palette = () => (dark.matches ? ['#4f93e6', '#ef7f4f', '#2fbf8a', '#d9a020'] : ['#2a78d6', '#eb6834', '#1baf7a', '#c98500']);
+  const run = (name) => document.querySelectorAll('[data-draw="' + name + '"]').forEach((el) => draws[name](el));
+  const all = () => { window.dash.colors = palette(); onDatas.forEach((f) => f()); Object.keys(draws).forEach(run); };
+  window.dash = {
+    colors: palette(),
+    data: (id) => ({ status: 'ok', data: calcs[id] || window.DASH_DATA[id] || [], columns: [] }),
+    calc: (id, { inputs, fn }) => { calcs[id] = fn(...inputs.map((i) => window.dash.data(i).data)); },
+    params: () => ({ ...params }),
+    setParams: (p) => { Object.assign(params, p); all(); },
+    resetParams: () => { params.store = 'ALL'; all(); },
+    onData: (fn) => { onDatas.push(fn); fn(); },
+    draw: (name, fn) => { draws[name] = fn; },
+    setLink: () => {}, refresh: () => {},
+  };
+  window.__dashStart = () => { all(); let w = innerWidth; addEventListener('resize', () => { if (Math.abs(innerWidth - w) > 4) { w = innerWidth; all(); } }); dark.addEventListener('change', all); };
+})();
+</script>
 <script>
   window.sx = window.sx || {};
   const sx = window.sx;
@@ -226,14 +295,28 @@
     },
   });
 
-  // ---- store picker ----
-  dash.draw('store-select', (sel) => {
+  // ---- accent colour from the dashboard's palette ----
+  dash.onData(() => { document.querySelectorAll('.sx').forEach((e) => e.style.setProperty('--sx-accent', dash.colors[0])); });
+
+  // ---- store chips, grouped by state ----
+  dash.draw('store-chips', (box) => {
     const rows = sx.ok('stockout_losses') || [];
-    sel.replaceChildren(new Option('All 10 stores', 'ALL'), ...rows.map((r) => r.store).sort().map((s) => new Option(s, s)));
-    sel.value = sx.store();
-    sel.onchange = () => dash.setParams({ store: sel.value });
+    const st = sx.store();
+    const chip = (value, label) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'sx-chip'; b.textContent = label;
+      b.setAttribute('aria-pressed', String(value === st)); b.onclick = () => dash.setParams({ store: value }); return b;
+    };
+    const groups = [];
+    const all = document.createElement('div'); all.className = 'sx-chip-group'; all.append(chip('ALL', 'All stores')); groups.push(all);
+    [...new Set(rows.map((r) => r.state))].sort().forEach((state) => {
+      const g = document.createElement('div'); g.className = 'sx-chip-group';
+      const lab = document.createElement('span'); lab.className = 'sx-chip-state'; lab.textContent = state; g.append(lab);
+      rows.filter((r) => r.state === state).map((r) => r.store).sort().forEach((s2) => g.append(chip(s2, s2.split('_')[1] ? s2 : s2)));
+      groups.push(g);
+    });
+    box.replaceChildren(...groups);
   });
-  dash.draw('store-name', (el) => { el.textContent = sx.storeLabel(sx.store()); });
+  dash.draw('store-name-title', (el) => { el.textContent = sx.store() === 'ALL' ? 'these 10 stores' : 'store ' + sx.store(); });
 
   // ---- headline figures ----
   const fig = (name, source, field, fmt) => dash.draw(name, (el) => {
@@ -252,18 +335,32 @@
 
   // ---- policy bars for the selected store ----
   dash.draw('policy-bars', (el) => {
-    const rows = sx.ok('store_policy');
     if (dash.data('store_policy').status === 'error') return sx.failed(el);
-    el.replaceChildren(); if (!rows) return;
+    const rows = sx.ok('store_policy'); const sav = sx.ok('store_savings');
+    el.replaceChildren(); if (!rows || !sav) return;
     const st = sx.store(); const data = sx.policies.map((p) => rows.find((x) => x.store === st && x.policy === p));
-    const W = Math.max(280, el.clientWidth), rowH = 54, H = data.length * rowH + 10;
+    const sv = sav.find((x) => x.store === st);
+    const fb = data[1], sa = data[2];
+    const label = (d) => sx.money(d.total_cost) + '  ·  ' + sx.pct1(d.fill_rate) + ' fill';
+    const W = Math.max(280, el.clientWidth), rowH = 58, H = data.length * rowH + 4;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
-    const left = 0, right = sx.textWidth(svg, data.map((d) => sx.money(d.total_cost) + '  ·  ' + sx.pct1(d.fill_rate) + ' fill')) + 12;
-    const x = d3.scaleLinear([0, d3.max(data, (d) => d.total_cost)], [left, W - right]);
-    const g = svg.selectAll('g').data(data).join('g').attr('transform', (d, i) => `translate(0,${i * rowH})`);
+    const saveTxt = 'saves ' + sx.money(sv.saving) + ' (' + d3.format('.1%')(sv.saving_pct) + ')';
+    const right = Math.max(sx.textWidth(svg, data.map(label)), sx.textWidth(svg, [saveTxt])) + 14;
+    const x = d3.scaleLinear([0, d3.max(data, (d) => d.total_cost)], [0, W - right]);
+    const g = svg.selectAll('g.r').data(data).join('g').attr('class', 'r').attr('transform', (d, i) => `translate(0,${i * rowH})`);
     g.append('text').attr('x', 0).attr('y', 14).attr('class', (d) => (d.policy === 'Stockout-aware' ? 'sx-strong' : null)).text((d) => d.policy);
-    g.append('rect').attr('x', left).attr('y', 22).attr('height', 20).attr('rx', 3).attr('width', (d) => Math.max(2, x(d.total_cost) - left)).style('fill', (d) => sx.color(d.policy));
-    g.append('text').attr('x', (d) => x(d.total_cost) + 8).attr('y', 37).text((d) => sx.money(d.total_cost) + '  ·  ' + sx.pct1(d.fill_rate) + ' fill');
+    g.append('rect').attr('x', 0).attr('y', 22).attr('height', 22).attr('rx', 4).attr('width', (d) => Math.max(2, x(d.total_cost))).style('fill', (d) => sx.color(d.policy));
+    g.filter((d) => d.policy !== 'Stockout-aware').append('text').attr('x', (d) => x(d.total_cost) + 8).attr('y', 38).text(label);
+    // the saving: the slice of forecast-based cost the stockout-aware rule avoids
+    const y2 = 2 * rowH;
+    if (fb.total_cost > sa.total_cost) {
+      svg.append('rect').attr('x', x(sa.total_cost)).attr('y', y2 + 22).attr('height', 22).attr('width', x(fb.total_cost) - x(sa.total_cost))
+        .style('fill', 'transparent').style('stroke', dash.colors[0]).style('stroke-dasharray', '3 3').style('stroke-width', 1.5);
+      svg.append('line').attr('x1', x(fb.total_cost)).attr('x2', x(fb.total_cost)).attr('y1', rowH + 44).attr('y2', y2 + 22)
+        .style('stroke', dash.colors[0]).style('stroke-dasharray', '3 3').style('stroke-width', 1.5);
+    }
+    svg.append('text').attr('x', Math.max(x(fb.total_cost), x(sa.total_cost)) + 8).attr('y', y2 + 31).text(label(sa));
+    svg.append('text').attr('x', Math.max(x(fb.total_cost), x(sa.total_cost)) + 8).attr('y', y2 + 47).attr('class', 'sx-accent-text').text(saveTxt);
   });
 
   dash.draw('policy-rows', (tb) => {
@@ -318,11 +415,20 @@
     const ends = [];
     sx.policies.forEach((p) => {
       const pts = data.filter((d) => d.policy === p).sort((a, b) => a.fill - b.fill);
-      svg.append('path').attr('d', line(pts)).style('fill', 'none').style('stroke', sx.color(p)).style('stroke-width', 2).style('stroke-linecap', 'round').style('stroke-linejoin', 'round');
+      svg.append('path').attr('d', line(pts)).style('fill', 'none').style('stroke', sx.color(p)).style('stroke-width', p === 'Stockout-aware' ? 3 : 2).style('opacity', p === 'Stockout-aware' ? 1 : 0.85).style('stroke-linecap', 'round').style('stroke-linejoin', 'round');
       svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (d) => x(d.fill)).attr('cy', (d) => y(d.cost)).attr('r', 4)
         .style('fill', 'var(--color-panel)').style('stroke', sx.color(p)).style('stroke-width', 2);
       const last = pts[pts.length - 1]; ends.push({ p, y: y(last.cost), x: x(last.fill) });
     });
+    const p2 = data.find((d) => d.policy === 'Forecast-based' && d.setting === 'z=1.65');
+    const p3 = data.find((d) => d.policy === 'Stockout-aware' && d.setting === 'z=1.65');
+    if (p2 && p3) {
+      svg.append('line').attr('x1', x(p2.fill)).attr('y1', y(p2.cost)).attr('x2', x(p3.fill)).attr('y2', y(p3.cost))
+        .style('stroke', dash.colors[0]).style('stroke-dasharray', '3 3').style('stroke-width', 1.5);
+      const tx = Math.min(x(p2.fill), x(p3.fill)) - 10;
+      svg.append('text').attr('x', tx).attr('y', y(p3.cost) + 22).attr('text-anchor', 'end').attr('class', 'sx-accent-text')
+        .text('95% target: ' + d3.format('.1%')(1 - p3.cost / p2.cost) + ' lower cost');
+    }
     ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
     svg.append('g').selectAll('text').data(ends).join('text').attr('x', (d) => d.x + 8).attr('y', (d) => d.y + 4).style('fill', (d) => sx.color(d.p)).style('font-weight', 600).text((d) => d.p);
     const tip = document.createElement('div'); tip.className = 'sx-tip'; tip.hidden = true; el.append(tip);
@@ -392,3 +498,6 @@
     });
   });
 </script>
+<script>window.__dashStart();</script>
+</body>
+</html>
